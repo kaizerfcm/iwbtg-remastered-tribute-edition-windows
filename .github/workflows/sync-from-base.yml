@@ -1,0 +1,71 @@
+name: Sync from base repository
+
+# Merges main of the base repository (kaizerfcm/iwbtg-remastered-tribute-edition) into this
+# mirror's main. A clean merge is pushed; a conflict opens or updates a pull request (or an issue)
+# instead, and nothing is ever force-pushed to main.
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: sync-from-base
+  cancel-in-progress: false
+
+env:
+  BASE_REPO: kaizerfcm/iwbtg-remastered-tribute-edition
+  SYNC_BRANCH: sync/base-main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Merge the base repository's main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add base "https://github.com/${BASE_REPO}.git"
+          git fetch --no-tags base main
+
+          if git merge-base --is-ancestor base/main HEAD; then
+            echo "Already up to date with ${BASE_REPO}."
+            exit 0
+          fi
+
+          if git merge --no-edit -m "Sync from ${BASE_REPO}" base/main; then
+            git push origin HEAD:main
+            echo "Merged and pushed."
+            exit 0
+          fi
+
+          git merge --abort
+          echo "Merge conflict: asking for a manual merge."
+          git push --force origin "base/main:refs/heads/${SYNC_BRANCH}"
+          title="Sync from ${BASE_REPO} (merge conflict)"
+          body="The scheduled sync could not merge \`${BASE_REPO}\` main into this repository's main without conflicts. Resolve the conflicts in this pull request and merge it. Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          existing=$(gh pr list --head "${SYNC_BRANCH}" --base main --state open --json number --jq '.[0].number // empty')
+          if [ -n "${existing}" ]; then
+            gh pr comment "${existing}" --body "${body}"
+          elif ! gh pr create --head "${SYNC_BRANCH}" --base main --title "${title}" --body "${body}"; then
+            issue=$(gh issue list --state open --search "in:title \"${title}\"" --json number --jq '.[0].number // empty')
+            if [ -n "${issue}" ]; then
+              gh issue comment "${issue}" --body "${body}"
+            else
+              gh issue create --title "${title}" --body "${body} The branch \`${SYNC_BRANCH}\` holds the base's main."
+            fi
+          fi
+          exit 1
