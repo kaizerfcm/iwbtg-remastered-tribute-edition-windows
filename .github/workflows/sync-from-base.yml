@@ -3,6 +3,7 @@ name: Sync from base repository
 # Merges main of the base repository (kaizerfcm/iwbtg-remastered-tribute-edition) into this
 # mirror's main. A clean merge is pushed; a conflict opens or updates a pull request (or an issue)
 # instead, and nothing is ever force-pushed to main.
+# The paths in KEEP_PATHS belong to this mirror: the merge always keeps this mirror's version.
 
 on:
   schedule:
@@ -21,6 +22,7 @@ concurrency:
 env:
   BASE_REPO: kaizerfcm/iwbtg-remastered-tribute-edition
   SYNC_BRANCH: sync/base-main
+  KEEP_PATHS: README.md
 
 jobs:
   sync:
@@ -46,9 +48,30 @@ jobs:
             exit 0
           fi
 
-          if git merge --no-edit -m "Sync from ${BASE_REPO}" base/main; then
+          keep_mirror_paths() {
+            for p in ${KEEP_PATHS}; do
+              if git cat-file -e "HEAD:${p}" 2>/dev/null; then
+                git checkout HEAD -- "${p}"
+              else
+                git rm -q --cached --ignore-unmatch -- "${p}"
+                rm -f -- "${p}"
+              fi
+            done
+          }
+
+          merged=no
+          if git merge --no-commit --no-ff base/main; then
+            merged=yes
+          else
+            others=$(git diff --name-only --diff-filter=U | grep -vxF -f <(printf '%s\n' ${KEEP_PATHS}) || true)
+            if [ -z "${others}" ] && git rev-parse -q --verify MERGE_HEAD >/dev/null; then merged=yes; fi
+          fi
+
+          if [ "${merged}" = yes ]; then
+            keep_mirror_paths
+            git commit --no-edit -m "Sync from ${BASE_REPO}"
             git push origin HEAD:main
-            echo "Merged and pushed."
+            echo "Merged and pushed (kept this mirror's ${KEEP_PATHS})."
             exit 0
           fi
 
