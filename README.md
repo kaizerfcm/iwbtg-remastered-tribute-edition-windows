@@ -1,3 +1,27 @@
+## Windows build
+
+This repository hosts the **Windows x64** release of I Wanna Be The Guy: Remastered Tribute Edition.
+
+**Download:** [IWBTGR-TributeEdition-win64.zip](https://github.com/kaizerfcm/iwbtg-remastered-tribute-edition-windows/releases/download/v1.6.6.6/IWBTGR-TributeEdition-win64.zip) ([latest release](https://github.com/kaizerfcm/iwbtg-remastered-tribute-edition-windows/releases/latest))
+
+**Install:** Windows 10/11 x64. Unzip anywhere and run `IWBTGR.exe`.
+
+| Keyboard (default) | Action |
+| --- | --- |
+| Arrows | Move |
+| Shift | Jump |
+| Z | Shoot |
+| R | Restart |
+| P | Pause |
+| S | Skip |
+| Backspace | Back |
+
+Controls can be remapped in *Options*. F11 toggles fullscreen. Controllers work too.
+
+**Other platforms:** [PS5](https://github.com/kaizerfcm/iwbtg-remastered-tribute-edition) | [Linux](https://github.com/kaizerfcm/iwbtg-remastered-tribute-edition-linux) | [Nintendo Switch](https://github.com/kaizerfcm/iwbtg-remastered-tribute-edition-switch) | [Android](https://github.com/kaizerfcm/iwbtg-remastered-tribute-edition-android) | [itch.io](https://shmshp.itch.io/iwbtgrt)
+
+---
+
 # I Wanna Be The Guy: Remastered Tribute Edition
 
 <img src="sce_sys/icon0.png" width="128" align="right">
